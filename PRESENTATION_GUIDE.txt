@@ -1,0 +1,70 @@
+Student Thrift Store: Presentation Guide & Code Walkthrough
+
+---------------------------------------------------
+PART 1: SUGGESTED PRESENTATION FLOW
+How you should demonstrate your project to your lab reviewers.
+
+Step 1: Introduction
+> Open index.html.
+> Introduce the project: "This is a Student Thrift Store, a C2C marketplace where students can log in to buy and sell college items without any page reloads."
+> Emphasize Technologies: Mention that the frontend uses HTML/CSS/JavaScript with AJAX, and the backend is completely powered by Python/Django and a MySQL Database.
+
+Step 2: Authentication Demo
+> Show the Login/Register system.
+> Register a fake user (e.g., student99). Log in. 
+> Point out how the website dynamically changes "Login" to "Hi, student99" asynchronously.
+
+Step 3: CRUD & Database Demo 
+> Click "Post an Item" (Create). Upload an image and add some details. 
+> Point out how it instantly appears on the wall (Read) without refreshing the browser because we use JSON REST APIs.
+> Click the Yellow "Edit" button to change the price (Update).
+> Click the Red "Delete" button to delete it (Delete).
+
+Step 4: The Advanced Search Feature
+> Type multiple keywords in the search bar (e.g. "laptop 8GB") and enter a price constraint.
+> Explain that the backend breaks the sentence down and magically scans the Title, Description, and Category simultaneously inside the MySQL database.
+
+Step 5: The "Wishlist" Many-to-Many Relationship
+> Click the heart icon on random items.
+> Click your Wishlist tab to show that the system correctly mapped your User ID to those specific Product IDs behind the scenes using Django's ORM mapping.
+
+---------------------------------------------------
+
+PART 2: CODE & FILE WALKTHROUGH
+If your professors ask you "Which file does what?", use this cheat sheet.
+
+THE CORE CONFIGURATION
+- manage.py
+  Django's built-in command-line tool. It is used to start the web server and push Python models into the MySQL database (migrations).
+
+- thrift_store/settings.py
+  The control center of the backend. You configured the MySQL database credentials here and told Django where to store user-uploaded images (MEDIA_ROOT).
+
+- thrift_store/urls.py
+  The absolute "Front Door" of the backend. When a user requests a web page, this file decides where to send them.
+
+THE BACKEND APPLICATION (store/)
+- store/models.py
+  Where the database tables are defined using Python instead of raw SQL code. It contains the "Product" (title, price, image) and "Wishlist" relationships. Django automatically translates this file into MySQL tables.
+
+- store/serializers.py
+  The "Translator". A database cannot send raw SQL objects to an HTML webpage. This file translates your Product objects into plain text (JSON), which the frontend JavaScript can easily read.
+
+- store/views.py
+  The absolute "Brains" of the application. This contains all of your REST API endpoints. It contains the logic for checking passwords, saving uploaded forms, parsing search queries, and verifying if a user is an "admin" before letting them delete an item.
+
+- store/urls.py
+  The internal router specifically for API routes (like /api/login/ or /api/products/).
+
+THE FRONTEND CLIENT 
+- templates/index.html
+  This is the massive "Single-Page Application" frontend. It serves 3 completely different roles in one file:
+  1. HTML Structure: Lays out the grid, the Bootstrap modals, and the Navbar.
+  2. CSS Customization: Contains the custom "Glassmorphism" styling, gradients, and hover color animations.
+  3. JavaScript + jQuery (AJAX): This listens for clicks. Instead of redirecting the user to a new HTML page, it triggers an AJAX function that silently asks the Django backend (views.py) for data behind the scenes, and then dynamically re-draws the screen.
+
+THE EXTRAS
+- import_csv.py
+  A custom automation script we wrote. It reads a CSV spreadsheet line-by-line, dynamically pings an external Image API to grab relevant pictures, and forcefully saves them into the Django database to simulate realistic traffic.
+- store/admin.py
+  A 3-line file that links your Custom Models into Django's hidden Superuser Dashboard so you can manage your database with a GUI.

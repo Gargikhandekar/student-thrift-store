@@ -1,0 +1,80 @@
+Web Programming Lab Project Report: Student Thrift Store
+
+1. Project Title and Objective
+Project Title: Student Thrift Store (OLX-Style Marketplace)
+Objective: To develop a localized, C2C (Consumer-to-Consumer) digital marketplace tailored for college students. The application allows users to easily buy and sell pre-owned academic-related items such as textbooks, electronics, fashion, and dorm furniture. The core objective is to demonstrate a dynamic, Single-Page Application (SPA) feel using full REST API integration without page reloads.
+
+---------------------------------------------------
+
+2. Technologies Used
+This project fulfills all required technical specifications outlined in the DS_3263 Web Programming Lab guidelines:
+
+Frontend Development
+> HTML5: Structured the entire web application interfaces, modals, and dynamic data containers.
+> CSS3: Built a custom modern "Glassmorphism" dark theme with hover animations, gradients, and polished aesthetics.
+> Bootstrap 5: Utilized for responsive grid layouts, quick UI components, and modal toggle systems.
+> JavaScript (ES6+) & jQuery: Handled all client-side logic, event listening, DOM manipulations, and form data collection.
+> AJAX (Asynchronous JavaScript and XML): Employed extensively to communicate with the backend seamlessly. Every single user interaction (Adding a product, Searching, Logging in) is handled via AJAX so the web page never reloads.
+
+Backend Development
+> Python & Django Framework: Powers the core server logic, URL routing, and security.
+> Django REST Framework (DRF): Utilized to build and expose standardized JSON endpoints for the frontend.
+> MySQL Database: Replaced the default SQLite system with a robust MySQL database to handle relational data scaling.
+> Django ORM (Object-Relational Mapping): Handled all database queries, filtering, creation, and deletion processes securely avoiding raw SQL injections.
+
+---------------------------------------------------
+
+3. System Architecture & Workflow
+The application follows a decoupled Client-Server Architecture:
+Step 1. The Client (Web Browser): Renders the HTML structure. When a user interacts with the page (e.g., searching for an item, publishing a product), a jQuery AJAX function intercepts the action.
+Step 2. The Request: AJAX packages the data (using JSON or FormData for images) and sends an asynchronous HTTP request (GET, POST, PUT, DELETE) attached with a CSRF Security token to the Django Backend.
+Step 3. The Server (Django & MySQL): Django receives the request via its router and hands it to the views. The view validates the data using DRF Serializers, translates the action into an ORM query, and executes it on the MySQL database.
+Step 4. The Response: The server responds with a JSON packet containing the updated data or success messages. The frontend processes this JSON and dynamically updates the Document Object Model (DOM) without refreshing the page.
+
+---------------------------------------------------
+
+4. Features Implemented (Fulfilling Guidelines)
+> User Registration & Authentication: Fully functional User authentication system operating asynchronously via AJAX.
+> Data Management (CRUD):
+  - Create: Logged-in users can post new items with image uploads.
+  - Read: Everyone can view the gallery of products.
+  - Update: Item owners (and Admins) can edit their item details and images.
+  - Delete: Item owners (and Admins) can permanently delete their products.
+> Advanced Search and Filter: Includes a multi-keyword semantic search engine that scans the title, description, and category. Also features exact minimum and maximum price filtering.
+> Wishlist Dashboard: Users can save items to a localized wishlist, demonstrating many-to-many database relationships.
+> API-Based Data Retrieval: The entire application relies on at least 6 distinct RESTful API endpoints.
+
+---------------------------------------------------
+
+5. Database Schema / Models
+The application relies strictly on a relational SQL structure using Django's ORM:
+
+Model 1: User (Django Core Auth Model)
+> username (String, Unique)
+> email (String)
+> password (Hashed String)
+
+Model 2: Product (Custom Model)
+> id (AutoField, Primary Key)
+> user (ForeignKey pointing to User, ON DELETE=CASCADE)
+> title (CharField)
+> description (TextField)
+> price (FloatField)
+> category (CharField)
+> image (ImageField, stored in media/product_images directory)
+> created_at (DateTimeField, Auto-generated)
+
+Model 3: Wishlist (Custom Model)
+> id (AutoField, Primary Key)
+> user (ForeignKey pointing to User, ON DELETE=CASCADE)
+> product (ForeignKey pointing to Product, ON DELETE=CASCADE)
+> Constraint: UniqueTogether(user, product) to prevent duplicate likes.
+
+---------------------------------------------------
+
+6. How to Run the Project (For Evaluation)
+1. Ensure the MySQL service is actively running on the machine.
+2. Activate the Python virtual environment containing the dependencies.
+3. Run the command to start the server.
+4. Open a browser to the localhost port.
+5. (Optional) Run the import_csv script to populate the database with dummy test data.

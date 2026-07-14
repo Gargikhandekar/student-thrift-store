@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Thrift Store</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+
+        /* Glassmorphism Navbar */
+        .navbar {
+            background: rgba(13, 17, 23, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            background: linear-gradient(90deg, #bb86fc, #03dac6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Forms and Inputs */
+        .form-control, .form-select {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #0d1117;
+            border-color: #bb86fc;
+            box-shadow: 0 0 8px rgba(187, 134, 252, 0.5);
+            color: #fff;
+        }
+
+        /* Buttons */
+        .btn-gradient {
+            background: linear-gradient(90deg, #9900ff, #ff007f);
+            border: none;
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
+            color: white;
+        }
+        .btn-outline-glow {
+            border: 1px solid #03dac6;
+            color: #03dac6;
+            background: transparent;
+            transition: all 0.3s;
+        }
+        .btn-outline-glow:hover {
+            background: #03dac6;
+            color: #000;
+            box-shadow: 0 0 10px #03dac6;
+        }
+
+        /* Product Cards */
+        .product-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            border-color: #bb86fc;
+        }
+        .price-tag {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #03dac6;
+        }
+        .category-badge {
+            background: rgba(187, 134, 252, 0.2);
+            color: #bb86fc;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Wishlist Heart */
+        .wishlist-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 35px; height: 35px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #fff;
+        }
+        .wishlist-btn:hover { background: rgba(0,0,0,0.8); transform: scale(1.1); }
+        .wishlist-btn.active { color: #ff007f; }
+
+        /* Modals Glassmorphism */
+        .modal-content {
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid #30363d;
+        }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg sticky-top px-3">
+    <a class="navbar-brand" href="#"><i class="fas fa-shopping-bag me-2"></i>ThriftStore</a>
+    <div class="ms-auto d-flex align-items-center gap-3">
+        <span id="user-info" class="fw-bold text-light hidden"></span>
+        <button id="btn-show-wishlist" class="btn btn-outline-glow hidden" onclick="toggleWishlistView()"><i class="fas fa-heart"></i> Wishlist</button>
+        <button id="btn-show-login" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#authModal">Login / Register</button>
+        <button id="btn-logout" class="btn btn-danger hidden" onclick="logoutApp()">Logout</button>
+    </div>
+</nav>
+
+<div class="container mt-5">
+
+    <!-- Filters & Search -->
+    <div class="card p-4 mb-4" style="background:#161b22; border-color:#30363d;">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <input type="text" id="filter-search" class="form-control" placeholder="Search by name...">
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="filter-category" class="form-control" placeholder="Category">
+            </div>
+            <div class="col-md-2">
+                <input type="number" id="filter-min" class="form-control" placeholder="Min Price">
+            </div>
+            <div class="col-md-2">
+                <input type="number" id="filter-max" class="form-control" placeholder="Max Price">
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-gradient" onclick="loadProducts()"><i class="fas fa-search"></i> Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Trigger (If Logged In) -->
+    <div id="add-product-section" class="text-end mb-4 hidden">
+        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="fas fa-plus"></i> Post an Item
+        </button>
+    </div>
+
+    <!-- Products Grid -->
+    <h3 id="section-title" class="mb-4 text-light">All Products</h3>
+    <div id="products-grid" class="row g-4"></div>
+
+</div>
+
+<!-- Auth Modal (Login/Register) -->
+<div class="modal fade" id="authModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-light">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="authTitle">Login</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="auth-error" class="alert alert-danger hidden"></div>
+                <input type="text" id="auth-username" class="form-control mb-3" placeholder="Username">
+                <input type="email" id="auth-email" class="form-control mb-3 hidden" placeholder="Email (for Register only)">
+                <input type="password" id="auth-password" class="form-control mb-4" placeholder="Password">
+                
+                <button id="auth-submit-btn" class="btn btn-gradient w-100 mb-3" onclick="submitAuth()">Login</button>
+                <div class="text-center">
+                    <a href="#" class="text-info text-decoration-none" onclick="toggleAuthMode()">Need an account? Register here.</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-light">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Post New Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="text" id="new-title" class="form-control mb-3" placeholder="Title">
+                <textarea id="new-desc" class="form-control mb-3" placeholder="Description" rows="3"></textarea>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <input type="number" id="new-price" class="form-control" placeholder="Price (₹)">
+                    </div>
+                    <div class="col-6">
+                        <input type="text" id="new-category" class="form-control" placeholder="Category">
+                    </div>
+                </div>
+                <input type="file" id="new-image" class="form-control mb-3" accept="image/*">
+                <button class="btn btn-gradient w-100" onclick="addProduct()">Publish Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-light">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Edit Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="edit-id">
+                <input type="text" id="edit-title" class="form-control mb-3" placeholder="Title">
+                <textarea id="edit-desc" class="form-control mb-3" placeholder="Description" rows="3"></textarea>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <input type="number" id="edit-price" class="form-control" placeholder="Price (₹)">
+                    </div>
+                    <div class="col-6">
+                        <input type="text" id="edit-category" class="form-control" placeholder="Category">
+                    </div>
+                </div>
+                <label class="form-label text-muted small">Update Image (Optional)</label>
+                <input type="file" id="edit-image" class="form-control mb-3" accept="image/*">
+                <button class="btn btn-warning w-100" onclick="updateProduct()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content text-center p-4 text-light border-0">
+            <i class="fas fa-envelope-open-text fa-3x mb-3" style="color: #03dac6;"></i>
+            <h5>Seller Details</h5>
+            <p><strong>Username:</strong> <span id="contact-user"></span></p>
+            <p><strong>Email:</strong> <span id="contact-email"></span></p>
+            <button class="btn btn-outline-light mt-2" data-bs-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let isRegisterMode = false;
+    let currentUser = null;
+    let isAdmin = false;
+    let showingWishlist = false;
+
+    // CSRF Function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Auth Toggles
+    function toggleAuthMode() {
+        isRegisterMode = !isRegisterMode;
+        $("#authTitle").text(isRegisterMode ? "Register" : "Login");
+        $("#auth-submit-btn").text(isRegisterMode ? "Register" : "Login");
+        $("[onclick='toggleAuthMode()']").text(isRegisterMode ? "Already have an account? Login here." : "Need an account? Register here.");
+        if(isRegisterMode) $("#auth-email").removeClass('hidden');
+        else $("#auth-email").addClass('hidden');
+    }
+
+    function updateNav() {
+        if (currentUser) {
+            $("#user-info").text("Hi, " + currentUser).removeClass('hidden');
+            $("#btn-show-wishlist").removeClass('hidden');
+            $("#btn-logout").removeClass('hidden');
+            $("#btn-show-login").addClass('hidden');
+            $("#add-product-section").removeClass('hidden');
+        } else {
+            $("#user-info").addClass('hidden');
+            $("#btn-show-wishlist").addClass('hidden');
+            $("#btn-logout").addClass('hidden');
+            $("#btn-show-login").removeClass('hidden');
+            $("#add-product-section").addClass('hidden');
+        }
+    }
+
+    // Auth Actions
+    function submitAuth() {
+        const url = isRegisterMode ? "/api/register/" : "/api/login/";
+        const data = {
+            username: $("#auth-username").val(),
+            password: $("#auth-password").val(),
+            email: $("#auth-email").val()
+        };
+
+        $.ajax({
+            url: url, method: "POST", contentType: "application/json",
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+            data: JSON.stringify(data),
+            success: function(res) {
+                currentUser = res.username;
+                isAdmin = res.is_superuser || false;
+                updateNav();
+                $("#authModal").modal('hide');
+                loadProducts();
+            },
+            error: function(err) {
+                $("#auth-error").text(err.responseJSON?.error || "Error").removeClass('hidden');
+            }
+        });
+    }
+
+    function logoutApp() {
+        $.ajax({
+            url: "/api/logout/", 
+            method: "POST",
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+            success: function() {
+                currentUser = null;
+                isAdmin = false;
+                showingWishlist = false;
+                updateNav();
+                loadProducts();
+            }
+        });
+    }
+
+    // Products & Wishlist
+    function toggleWishlistView() {
+        showingWishlist = !showingWishlist;
+        $("#section-title").text(showingWishlist ? "My Wishlist" : "All Products");
+        $("#btn-show-wishlist").toggleClass('btn-outline-glow btn-gradient');
+        loadProducts();
+    }
+
+    function loadProducts() {
+        const grid = $("#products-grid");
+        grid.html("<p class='text-center text-muted'>Loading...</p>");
+
+        if (showingWishlist) {
+            $.get("/api/wishlist/", function(data) {
+                grid.empty();
+                if(data.length === 0) grid.html("<p class='text-center'>Wishlist empty.</p>");
+                data.forEach(item => grid.append(createCard(item.product_details, true)));
+            });
+        } else {
+            const url = `/api/products/?search=${$("#filter-search").val()}&category=${$("#filter-category").val()}&min_price=${$("#filter-min").val()}&max_price=${$("#filter-max").val()}`;
+            $.get(url, function(data) {
+                grid.empty();
+                if(data.length === 0) grid.html("<p class='text-center'>No items found.</p>");
+                data.forEach(p => grid.append(createCard(p, false))); // Heart state requires logic, assuming false initially unless checked via DB
+            });
+        }
+    }
+
+    function createCard(p, inWishlist) {
+        const heartClass = inWishlist ? "active" : "";
+        const imgTag = p.image ? `<img src="${p.image}" class="img-fluid w-100 mb-3" style="border-radius: 8px; object-fit: cover; height: 200px;">` : `<div class="mb-3 d-flex align-items-center justify-content-center bg-dark" style="border-radius: 8px; height: 200px;"><i class="fas fa-image fa-3x text-muted"></i></div>`;
+        
+        let actionsHtml = `<button class="btn btn-outline-light w-100" onclick="showContact('${p.seller_username}', '${p.seller_email}')">Contact Seller</button>`;
+        if (currentUser === p.seller_username || isAdmin) {
+            let safeTitle = p.title.replace(/'/g, "\\'");
+            let safeDesc = p.description.replace(/'/g, "\\'");
+            let safeCat = p.category.replace(/'/g, "\\'");
+            actionsHtml = `
+            <div class="d-flex gap-2">
+                <button class="btn btn-warning w-50" onclick="openEditModal(${p.id}, '${safeTitle}', '${safeDesc}', ${p.price}, '${safeCat}')">Edit</button>
+                <button class="btn btn-danger w-50" onclick="deleteProduct(${p.id})">Delete</button>
+            </div>`;
+        }
+
+        return `
+        <div class="col-md-4 col-sm-6">
+            <div class="product-card p-3">
+                <div class="wishlist-btn ${heartClass}" onclick="toggleWishlist(${p.id}, this)">
+                    <i class="fas fa-heart"></i>
+                </div>
+                ${imgTag}
+                <span class="category-badge mb-2 d-inline-block">${p.category}</span>
+                <h5 class="fw-bold mt-2">${p.title}</h5>
+                <p class="text-secondary small mb-3" style="min-height:40px;">${p.description}</p>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="price-tag">₹${p.price}</span>
+                </div>
+                ${actionsHtml}
+            </div>
+        </div>`;
+    }
+
+    function addProduct() {
+        let formData = new FormData();
+        formData.append("title", $("#new-title").val());
+        formData.append("description", $("#new-desc").val());
+        formData.append("price", $("#new-price").val());
+        formData.append("category", $("#new-category").val());
+        
+        let fileInput = $("#new-image")[0].files[0];
+        if (fileInput) formData.append("image", fileInput);
+
+        $.ajax({
+            url: "/api/products/", method: "POST",
+            processData: false, contentType: false,
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+            data: formData,
+            success: function() {
+                $("#addProductModal").modal('hide');
+                loadProducts();
+            },
+            error: function() { alert("Failed. Please login or check inputs."); }
+        });
+    }
+
+    function openEditModal(id, title, desc, price, cat) {
+        $("#edit-id").val(id);
+        $("#edit-title").val(title);
+        $("#edit-desc").val(desc);
+        $("#edit-price").val(price);
+        $("#edit-category").val(cat);
+        $("#editProductModal").modal('show');
+    }
+
+    function updateProduct() {
+        let id = $("#edit-id").val();
+        let formData = new FormData();
+        formData.append("title", $("#edit-title").val());
+        formData.append("description", $("#edit-desc").val());
+        formData.append("price", $("#edit-price").val());
+        formData.append("category", $("#edit-category").val());
+        
+        let fileInput = $("#edit-image")[0].files[0];
+        if (fileInput) formData.append("image", fileInput);
+
+        $.ajax({
+            url: `/api/update/${id}/`, 
+            method: "PUT",
+            processData: false, contentType: false,
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+            data: formData,
+            success: function() {
+                $("#editProductModal").modal('hide');
+                loadProducts();
+            },
+            error: function() { alert("Failed to update."); }
+        });
+    }
+
+    function deleteProduct(id) {
+        if(confirm("Are you sure you want to delete this item?")) {
+            $.ajax({
+                url: `/api/delete/${id}/`, method: "DELETE",
+                headers: { "X-CSRFToken": getCookie("csrftoken") },
+                success: function() { loadProducts(); }
+            });
+        }
+    }
+
+    function toggleWishlist(id, btn) {
+        if (!currentUser) return alert("Please log in to use the wishlist!");
+        $.ajax({
+            url: "/api/wishlist/", method: "POST", contentType: "application/json",
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+            data: JSON.stringify({ product_id: id }),
+            success: function(res) {
+                if(res.status === "added") $(btn).addClass('active');
+                else $(btn).removeClass('active');
+                if(showingWishlist) loadProducts(); // Refresh if strictly examining wishlist view
+            }
+        });
+    }
+
+    function showContact(user, email) {
+        $("#contact-user").text(user || "Unknown");
+        $("#contact-email").text(email || "No email available");
+        $("#contactModal").modal('show');
+    }
+
+    $(document).ready(() => {
+        // Fetch real username instead of hardcoding
+        $.get("/api/profile/").done((res) => { 
+            currentUser = res.username; 
+            isAdmin = res.is_superuser || false;
+            updateNav(); 
+        }).fail(() => updateNav());
+        
+        loadProducts();
+    });
+</script>
+</body>
+</html>
