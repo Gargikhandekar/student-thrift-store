@@ -1,5 +1,8 @@
 import os
 import random
+import io
+from decimal import Decimal
+
 import django
 from PIL import Image
 
@@ -8,9 +11,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'thrift_store.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from store.models import Product
 from django.core.files.base import ContentFile
-import io
+from store.models import PRODUCT_CATEGORIES, Product
 
 print("Clearing old data (except superusers if any)...")
 Product.objects.all().delete()
@@ -27,7 +29,7 @@ def generate_dummy_image(color, text):
     img.save(img_byte_arr, format='PNG')
     return ContentFile(img_byte_arr.getvalue(), name=f'{text}.png')
 
-categories = ['Electronics', 'Clothing', 'Books', 'Furniture', 'Misc']
+categories = list(PRODUCT_CATEGORIES)
 adjectives = ['Vintage', 'Brand New', 'Used', 'Retro', 'Clean', 'Refurbished', 'Study']
 nouns = ['Film Camera', 'Denim Jacket', 'Calculus Textbook', 'Desk Lamp', 'Mechanical Keyboard', 'Monitor', 'Graphic T-Shirt', 'Noise Cancelling Headphones', 'Hiking Backpack']
 
@@ -51,9 +53,9 @@ colors = [
 for user in users:
     title = f"{random.choice(adjectives)} {random.choice(nouns)}"
     desc = f"Selling my {title.lower()}! It's in great condition, I just don't need it for my classes anymore. Pick up near dorms."
-    price = round(random.uniform(5.0, 150.0), 2)
+    price = Decimal(str(round(random.uniform(5.0, 150.0), 2)))
     cat = random.choice(categories)
-    
+
     prod = Product(
         user=user,
         title=title,
