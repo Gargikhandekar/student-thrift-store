@@ -183,6 +183,20 @@ Automated tests always use SQLite.
 python manage.py test store
 ```
 
+Event instrumentation tests:
+
+```bash
+USE_SQLITE=1 python manage.py test store.tests_events
+```
+
+## Analytics (Phase 1)
+
+The API emits marketplace analytics events after successful DB commits (`transaction.on_commit`):
+
+`user_registered`, `listing_created`, `listing_updated`, `listing_deleted`, `wishlist_added`, `wishlist_removed`
+
+See `analytics/README.md`. Events are logged locally in Phase 1 — **Kafka is not connected yet**.
+
 ## Future Improvements
 
 These are **not implemented** today:
@@ -190,7 +204,7 @@ These are **not implemented** today:
 - Purchase / order / payment flows
 - Listing sold status and expiration
 - Reviews and messaging
-- Event-driven analytics (for example Kafka → object storage → orchestration → warehouse → dbt → dashboards)
+- Kafka streaming, S3 raw storage, Airflow, dbt, warehouse, Tableau (planned later phases)
 
 ## Security notes
 

@@ -5,6 +5,16 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from analytics.events import (
+    build_listing_created_event,
+    build_listing_deleted_event,
+    build_listing_updated_event,
+    build_user_registered_event,
+    build_wishlist_added_event,
+    build_wishlist_removed_event,
+    clone_product_state,
+    schedule_event_publish,
+)
 from .models import Product, Wishlist
 from .serializers import ProductSerializer, WishlistSerializer
 
@@ -33,6 +43,7 @@ def api_register(request):
         return Response({'error': 'Username already exists'}, status=400)
 
     user = User.objects.create_user(username=username, email=email, password=password)
+    schedule_event_publish(build_user_registered_event(user))
     login(request, user)
     return Response({'message': 'Registered and logged in', 'username': username})
 
@@ -108,7 +119,10 @@ def product_list(request):
 
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            product = serializer.save(user=request.user)
+            schedule_event_publish(
+                build_listing_created_event(product=product, actor_id=request.user.id)
+            )
             return Response(serializer.data, status=201)
 
         return Response(serializer.errors, status=400)
@@ -126,7 +140,9 @@ def delete_product(request, id):
     if product.user != request.user and not request.user.is_superuser:
         return Response({"error": "Not allowed"}, status=403)
 
+    event = build_listing_deleted_event(product=product, actor_id=request.user.id)
     product.delete()
+    schedule_event_publish(event)
     return Response({"message": "Deleted"})
 
 
@@ -142,10 +158,19 @@ def update_product(request, id):
     if product.user != request.user and not request.user.is_superuser:
         return Response({"error": "Not allowed"}, status=403)
 
+    previous = clone_product_state(product)
     serializer = ProductSerializer(product, data=request.data)
     if serializer.is_valid():
         # Do not pass user=... — ownership must stay with the original seller.
-        serializer.save()
+        updated = serializer.save()
+        schedule_event_publish(
+            build_listing_updated_event(
+                previous=previous,
+                current=updated,
+                actor_id=request.user.id,
+                actor_is_superuser=request.user.is_superuser,
+            )
+        )
         return Response(serializer.data)
 
     return Response(serializer.errors, status=400)
@@ -178,9 +203,22 @@ def wishlist_view(request):
             product=product,
         )
         if not created:
+            event = build_wishlist_removed_event(
+                wishlist_id=wishlist_item.id,
+                product=product,
+                actor_id=request.user.id,
+            )
             wishlist_item.delete()
+            schedule_event_publish(event)
             return Response({"message": "Removed from wishlist", "status": "removed"})
 
+        schedule_event_publish(
+            build_wishlist_added_event(
+                wishlist_item=wishlist_item,
+                product=product,
+                actor_id=request.user.id,
+            )
+        )
         serializer = WishlistSerializer(wishlist_item)
         return Response({
             "message": "Added to wishlist",
