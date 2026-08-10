@@ -1,7 +1,7 @@
 """Event publishing interface.
 
-Phase 1: log events only. No Kafka broker is required.
-Phase 2 will swap in a Kafka-backed publisher behind the same API.
+Phase 1: LoggingPublisher / RecordingPublisher.
+Phase 2: optional KafkaPublisher when KAFKA_ENABLED=true.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ class EventPublisher(Protocol):
 
 
 class LoggingPublisher:
-    """Default Phase 1 publisher: write JSON events to application logs."""
+    """Default publisher: write JSON events to application logs."""
 
     def publish(self, event: dict) -> None:
         logger.info('analytics_event %s', json.dumps(event, default=str))
@@ -46,10 +46,29 @@ class RecordingPublisher:
 _publisher: EventPublisher | None = None
 
 
+def create_default_publisher() -> EventPublisher:
+    """
+    Choose publisher from environment.
+
+    KAFKA_ENABLED=false (default) -> LoggingPublisher (no broker connection).
+    KAFKA_ENABLED=true -> KafkaPublisher.
+    """
+    from analytics.kafka.config import kafka_enabled
+
+    if kafka_enabled():
+        from analytics.kafka.producer import KafkaPublisher
+
+        logger.info('Analytics publisher: KafkaPublisher')
+        return KafkaPublisher()
+
+    logger.debug('Analytics publisher: LoggingPublisher')
+    return LoggingPublisher()
+
+
 def get_publisher() -> EventPublisher:
     global _publisher
     if _publisher is None:
-        _publisher = LoggingPublisher()
+        _publisher = create_default_publisher()
     return _publisher
 
 

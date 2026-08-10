@@ -189,13 +189,31 @@ Event instrumentation tests:
 USE_SQLITE=1 python manage.py test store.tests_events
 ```
 
-## Analytics (Phase 1)
+## Analytics (Phase 1 + Phase 2)
+
+### Phase 1 — Event contract
 
 The API emits marketplace analytics events after successful DB commits (`transaction.on_commit`):
 
 `user_registered`, `listing_created`, `listing_updated`, `listing_deleted`, `wishlist_added`, `wishlist_removed`
 
-See `analytics/README.md`. Events are logged locally in Phase 1 — **Kafka is not connected yet**.
+See `analytics/README.md`.
+
+### Phase 2 — Kafka (optional)
+
+When `KAFKA_ENABLED=true`, events are published to local Kafka topic `thrift_events`.
+
+```bash
+docker compose up -d
+python -m analytics.kafka.consumer
+KAFKA_ENABLED=true USE_SQLITE=1 python manage.py runserver
+```
+
+Default `KAFKA_ENABLED=false`: marketplace runs without any Kafka connection.
+
+### Not implemented yet
+
+S3, Airflow, warehouse, dbt, Tableau.
 
 ## Future Improvements
 
@@ -204,7 +222,7 @@ These are **not implemented** today:
 - Purchase / order / payment flows
 - Listing sold status and expiration
 - Reviews and messaging
-- Kafka streaming, S3 raw storage, Airflow, dbt, warehouse, Tableau (planned later phases)
+- S3 raw storage, Airflow, dbt, warehouse, Tableau (later phases)
 
 ## Security notes
 

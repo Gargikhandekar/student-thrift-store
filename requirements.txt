@@ -3,3 +3,4 @@ djangorestframework
 PyMySQL
 Pillow
 python-dotenv
+kafka-python==3.0.10
