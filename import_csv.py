@@ -6,13 +6,14 @@ import io
 import urllib.request
 from django.core.files.base import ContentFile
 import random
+from decimal import Decimal, InvalidOperation
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'thrift_store.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from store.models import Product
+from store.models import PRODUCT_CATEGORIES, Product
 
 def generate_dummy_image(title):
     color = random.choice([
@@ -51,8 +52,20 @@ with open(csv_file_path, mode='r', encoding='utf-8') as file:
         # Get data from columns
         title = row.get('title', 'Unknown Item').strip()
         description = row.get('description', '').strip()
-        price = float(row.get('price', 0.0))
+        try:
+            price = Decimal(str(row.get('price', '0')).strip())
+        except (InvalidOperation, TypeError):
+            print(f"Skipping row with invalid price: {row.get('price')!r}")
+            continue
+
         category = row.get('category', 'Misc').strip()
+        if category not in PRODUCT_CATEGORIES:
+            print(
+                f"Warning: category {category!r} for {title!r} is not in "
+                f"{PRODUCT_CATEGORIES}; storing as 'Misc'."
+            )
+            category = 'Misc'
+
         username = row.get('username', 'student_demo').strip()
         image_url = row.get('image_url', '').strip()
 
